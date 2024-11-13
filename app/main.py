@@ -21,8 +21,8 @@ class Deck:
 class Ship:
     def __init__(
             self,
-            start: Tuple[int],
-            end: Tuple[int],
+            start: Tuple[int, int],
+            end: Tuple[int, int],
             is_drowned: bool = False
     ) -> None:
         self.start = start
@@ -56,13 +56,48 @@ class Ship:
 
 
 class Battleship:
-    def __init__(self, ships: list[Tuple[Tuple[int]]]) -> None:
+    def __init__(self,
+                 ships: list[Tuple[Tuple[int, int], Tuple[int, int]]]
+                 ) -> None:
         self.ships = ships
         self.field = {}
         self.create_field()
+        self._validate_field()
 
     def __repr__(self) -> str:
         return f"{self.field}"
+
+    def _validate_field(self) -> None:
+        set_ships = set(self.field.values())
+        quantity = len(set_ships)
+        if quantity != 10:
+            print(f"There must be 10 ships, but are {quantity}")
+            return
+        ships_by_type = {4: 0, 3: 0, 2: 0, 1: 0}
+        for ship in set_ships:
+            length = len(ship.decks)
+            if length in ships_by_type.keys():
+                ships_by_type[length] += 1
+        for number_of_decks in ships_by_type:
+            if number_of_decks + ships_by_type[number_of_decks] != 5:
+                print(f"There must be {5 - number_of_decks} ships, "
+                      f"with {number_of_decks} decks")
+                return
+        for ship in set_ships:
+            row_start, column_start = ship.decks[0].row, ship.decks[0].column
+            row_end, column_end = ship.decks[-1].row, ship.decks[-1].column
+            for row in range(row_start - 1, row_end + 2):
+                for column in range(column_start - 1, column_end + 2):
+                    if 0 <= row <= 9 and 0 <= column <= 9:
+                        if (row_start <= row <= row_end
+                                and column_start <= column <= column_end):
+                            continue
+                        try:
+                            if self.field[(row, column)]:
+                                print("The ships are not positioned correctly")
+                                return
+                        except KeyError:
+                            pass
 
     def create_field(self) -> None:
         for start, end in self.ships:
@@ -89,7 +124,7 @@ class Battleship:
                     if deck.is_alive:
                         print(u"\u25A1", end=" ")
                     else:
-                        print("x", end=" ")
+                        print("*", end=" ")
                 else:
                     print("~", end=" ")
             print("\n")
